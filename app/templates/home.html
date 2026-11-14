@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}Accueil{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+  <h1 class="text-3xl font-bold mb-6 text-center text-red-800">Accueil</h1>
+
+  <!-- Tableau membres x réunions -->
+  <section class="bg-white shadow-md rounded-xl border border-red-100 mb-10 overflow-hidden">
+    <div class="px-4 py-3 bg-gradient-to-r from-red-600 to-red-800 text-white">
+      <h2 class="font-semibold text-lg">Tableau des présences</h2>
+      <p class="text-xs opacity-90">Les membres avec le plus d'absences sont en haut.</p>
+    </div>
+
+    <!-- Légende -->
+    <div class="px-4 py-3 flex flex-wrap gap-2 border-b text-xs">
+      {% for s in statuses %}
+      <span class="px-2 py-1 rounded-lg font-medium {{ s.cell }}">{{ s.emoji }} {{ s.label }}</span>
+      {% endfor %}
+      <span class="px-2 py-1 rounded-lg font-medium bg-gray-100 text-gray-500">— Non saisi</span>
+    </div>
+
+    {% if not rows %}
+    <p class="p-4 text-gray-500">Aucun membre enregistré.</p>
+    {% elif not meetings %}
+    <p class="p-4 text-gray-500">Aucune réunion pour l'instant.</p>
+    {% else %}
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm border-collapse">
+        <thead>
+          <tr class="bg-red-50 text-red-900">
+            <th class="sticky left-0 z-10 bg-red-50 px-3 py-2 text-left align-bottom">Membre</th>
+            <th class="px-3 py-2 text-center align-bottom" title="Nombre d'absences, tous types confondus">Absences</th>
+            {% for meeting in meetings %}
+            <th class="px-2 py-2 text-center align-bottom min-w-[6rem]">
+              <a href="{{ url_for('main.meeting_detail', meeting_id=meeting.id) }}" class="hover:underline">
+                <span class="block text-xs font-semibold">{{ meeting.date.strftime("%d/%m/%Y") }}</span>
+                <span class="block text-xs font-normal">{{ meeting.title }}</span>
+              </a>
+            </th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+          <tr class="border-t">
+            <td class="sticky left-0 z-10 bg-white px-3 py-2 font-medium whitespace-nowrap">
+              {{ row.member.display_name }}
+              {% if row.member.totem %}
+              <span class="block text-xs font-normal text-gray-500">{{ row.member.first_name }} {{ row.member.last_name }}</span>
+              {% endif %}
+            </td>
+            <td class="px-3 py-2 text-center font-semibold {% if row.absences %}text-red-700{% else %}text-gray-400{% endif %}">
+              {{ row.absences }}
+            </td>
+            {% for status in row.cells %}
+            <td class="px-1 py-1 text-center">
+              {% if status %}
+              <span class="block rounded-md px-2 py-1 {{ status_map[status].cell }}" title="{{ status_map[status].label }}">
+                {{ status_map[status].emoji }}<span class="sr-only">{{ status_map[status].label }}</span>
+              </span>
+              {% else %}
+              <span class="text-gray-300" title="Non saisi">—</span>
+              {% endif %}
+            </td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+  </section>
+
+  <!-- Réunions : résumé des présences -->
+  <h2 class="text-2xl font-bold mb-4 text-red-800">Réunions</h2>
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
+    {% for meeting in meetings %}
+    <article class="bg-white shadow-md rounded-xl overflow-hidden transform transition hover:scale-[1.01]">
+      <!-- En-tête -->
+      <div class="px-4 py-3 bg-gradient-to-r from-red-600 to-red-800 text-white flex justify-between items-center">
+        <h3 class="font-semibold text-lg">{{ meeting.title }}</h3>
+        <span class="text-sm opacity-90">{{ meeting.date.strftime("%d/%m/%Y") }}</span>
+      </div>
+
+      <!-- Résumé des présences -->
+      <div class="p-4 space-y-2">
+        {% for s in statuses %}
+        <div class="flex items-center justify-between">
+          <span class="text-gray-700 text-sm font-medium">{{ s.emoji }} {{ s.label }}</span>
+          <span class="px-2 py-1 rounded-lg text-sm font-semibold {{ s.cell }}">
+            {{ summaries[meeting.id][s.key] }}
+          </span>
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- Bouton d'action -->
+      <div class="px-4 py-3 bg-gray-50 flex justify-end">
+        <a href="{{ url_for('main.meeting_detail', meeting_id=meeting.id) }}"
+           class="bg-red-600 hover:bg-red-700 text-white text-sm px-4 py-2 rounded-lg shadow transition">
+          📋 Gérer présences
+        </a>
+      </div>
+    </article>
+    {% else %}
+    <p class="text-gray-500">Aucune réunion pour l'instant.</p>
+    {% endfor %}
+  </div>
+
+  <!-- Retour admin -->
+  <div class="mt-8 text-center">
+    <a href="{{ url_for('main.admin') }}"
+       class="inline-block text-red-700 hover:text-red-900 font-medium transition">
+      ← Retour administration
+    </a>
+  </div>
+</div>
+{% endblock %}

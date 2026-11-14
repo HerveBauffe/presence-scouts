@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+{% block title %}Administration{% endblock %}
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+  <h1 class="text-3xl font-bold mb-6 text-center text-red-800">Administration</h1>
+
+  <!-- Section gestion réunions -->
+  <div class="bg-white shadow-md rounded-xl p-6 mb-8 border border-red-100">
+    <h2 class="text-xl font-semibold mb-4">📅 Gestion des réunions</h2>
+
+    <!-- Création réunion -->
+    <form method="POST" class="space-y-4 mb-6">
+      {{ meeting_form.hidden_tag() }}
+      <input type="hidden" name="add_meeting" value="1">
+      <div>
+        {{ meeting_form.title.label(class_="block text-sm font-medium text-gray-700") }}
+        {{ meeting_form.title(class_="border w-full p-2 rounded-lg focus:ring-2 focus:ring-red-500") }}
+      </div>
+      <div>
+        {{ meeting_form.date.label(class_="block text-sm font-medium text-gray-700") }}
+        {{ meeting_form.date(class_="border w-full p-2 rounded-lg focus:ring-2 focus:ring-red-500") }}
+      </div>
+      <div>
+        {{ meeting_form.submit(class_="bg-red-700 hover:bg-red-800 text-white px-4 py-2 rounded-lg shadow transition") }}
+      </div>
+    </form>
+
+    <!-- Liste réunions -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      {% for meeting in meetings %}
+      <div class="p-4 border rounded-lg shadow-sm hover:shadow-md transition flex flex-col justify-between w-full">
+        <form method="POST" action="{{ url_for('main.edit_meeting', meeting_id=meeting.id) }}" class="space-y-2 w-full">
+          <input type="date" name="date" value="{{ meeting.date.strftime('%Y-%m-%d') }}" 
+                class="border p-2 rounded-lg w-full focus:ring-2 focus:ring-red-500">
+          <input type="text" name="title" value="{{ meeting.title }}" 
+                class="border p-2 rounded-lg w-full focus:ring-2 focus:ring-red-500">
+          <div class="flex flex-wrap gap-2">
+        <a href="{{ url_for('main.meeting_detail', meeting_id=meeting.id) }}" 
+          class="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1 rounded-lg shadow transition">
+          Présences
+        </a>
+            <button type="submit" 
+                    class="bg-red-500 hover:bg-red-600 text-white text-xs px-3 py-1 rounded-lg shadow transition">
+              Modifier
+            </button>
+        </form>
+        <form method="POST" action="{{ url_for('main.delete_meeting', meeting_id=meeting.id) }}" 
+              onsubmit="return confirm('Supprimer cette réunion ?');" class="flex">
+          <button type="submit" 
+                  class="bg-red-800 hover:bg-red-900 text-white text-xs px-3 py-1 rounded-lg shadow transition">
+            Supprimer
+          </button>
+        </form>
+
+          </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Section ajouter un membre -->
+  <div class="bg-white shadow-md rounded-xl p-6 mb-8 border border-red-100">
+    <h2 class="text-xl font-semibold mb-4">➕ Ajouter un membre</h2>
+    <form method="POST" class="space-y-4">
+      {{ form.hidden_tag() }}
+      <div>
+        {{ form.first_name.label(class_="block text-sm font-medium text-gray-700") }}
+        {{ form.first_name(class_="border w-full p-2 rounded-lg focus:ring-2 focus:ring-red-500") }}
+      </div>
+      <div>
+        {{ form.last_name.label(class_="block text-sm font-medium text-gray-700") }}
+        {{ form.last_name(class_="border w-full p-2 rounded-lg focus:ring-2 focus:ring-red-500") }}
+      </div>
+      <div>
+        {{ form.totem.label(class_="block text-sm font-medium text-gray-700") }}
+        {{ form.totem(class_="border w-full p-2 rounded-lg focus:ring-2 focus:ring-red-500") }}
+      </div>
+      <div>
+        {{ form.submit(class_="bg-red-700 hover:bg-red-800 text-white px-4 py-2 rounded-lg shadow transition") }}
+      </div>
+    </form>
+
+    <!-- Liste des membres : édition et assignation de groupe en masse -->
+    <h3 class="text-lg font-medium mt-6 mb-3">Membres actuels</h3>
+    <form method="POST" action="{{ url_for('main.update_members') }}">
+      <div class="overflow-x-auto border rounded-lg">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-left bg-red-50 text-red-900">
+              <th class="px-3 py-2">Prénom</th>
+              <th class="px-3 py-2">Nom</th>
+              <th class="px-3 py-2">Totem</th>
+              <th class="px-3 py-2">Groupe</th>
+              <th class="px-3 py-2 text-right">Supprimer</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for member in members %}
+            <tr class="border-t">
+              <td class="px-3 py-2">
+                <input type="text" name="first_name_{{ member.id }}" value="{{ member.first_name }}"
+                       class="border p-1 rounded-lg w-full focus:ring-2 focus:ring-red-500">
+              </td>
+              <td class="px-3 py-2">
+                <input type="text" name="last_name_{{ member.id }}" value="{{ member.last_name }}"
+                       class="border p-1 rounded-lg w-full focus:ring-2 focus:ring-red-500">
+              </td>
+              <td class="px-3 py-2">
+                <input type="text" name="totem_{{ member.id }}" value="{{ member.totem or '' }}"
+                       placeholder="—" class="border p-1 rounded-lg w-full focus:ring-2 focus:ring-red-500">
+              </td>
+              <td class="px-3 py-2">
+                <select name="group_id_{{ member.id }}"
+                        class="border p-1 rounded-lg w-full focus:ring-2 focus:ring-red-500">
+                  <option value="" {% if not member.group_id %}selected{% endif %}>— Sans groupe —</option>
+                  {% for group in groups %}
+                  <option value="{{ group.id }}" {% if member.group_id == group.id %}selected{% endif %}>
+                    {{ group.name }}
+                  </option>
+                  {% endfor %}
+                </select>
+              </td>
+              <td class="px-3 py-2 text-right">
+                <button type="submit" formaction="{{ url_for('main.delete_member', member_id=member.id) }}"
+                        formnovalidate
+                        onclick="return confirm('Supprimer {{ member.first_name }} {{ member.last_name }} ?');"
+                        class="bg-red-800 hover:bg-red-900 text-white text-xs px-3 py-1 rounded-lg shadow transition">
+                  Supprimer
+                </button>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="5" class="px-3 py-4 text-gray-500 text-center">Aucun membre pour l'instant.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% if members %}
+      <div class="mt-4 text-right">
+        <button type="submit"
+                class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg shadow transition">
+          💾 Enregistrer les modifications
+        </button>
+      </div>
+      {% endif %}
+    </form>
+  </div>
+
+  <!-- Section gestion groupes -->
+  <div class="bg-white shadow-md rounded-xl p-6 border border-red-100">
+    <h2 class="text-xl font-semibold mb-4">👥 Gestion des groupes</h2>
+
+    <!-- Création groupe -->
+    <form method="POST" class="space-y-4 mb-6">
+      {{ group_form.hidden_tag() }}
+      <input type="hidden" name="add_group" value="1">
+      <div>
+        {{ group_form.name.label(class_="block text-sm font-medium text-gray-700") }}
+        {{ group_form.name(class_="border w-full p-2 rounded-lg focus:ring-2 focus:ring-red-500") }}
+      </div>
+      <div>
+        {{ group_form.submit(class_="bg-red-700 hover:bg-red-800 text-white px-4 py-2 rounded-lg shadow transition") }}
+      </div>
+    </form>
+
+    <p class="text-xs text-gray-500 mb-3">
+      Utilisez les flèches pour choisir l'ordre d'affichage des groupes dans les réunions.
+    </p>
+
+    <!-- Liste groupes, dans l'ordre choisi -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      {% for group in groups %}
+      <div class="p-4 border rounded-lg shadow-sm hover:shadow-md transition">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-semibold text-gray-400">Ordre {{ loop.index }}</span>
+          <div class="flex gap-1">
+            <form method="POST" action="{{ url_for('main.move_group', group_id=group.id, direction='up') }}">
+              <button type="submit" {% if loop.first %}disabled{% endif %}
+                      class="text-xs w-7 h-7 rounded-lg border border-red-300 text-red-700 hover:bg-red-50 disabled:opacity-30 disabled:cursor-not-allowed transition">
+                ▲
+              </button>
+            </form>
+            <form method="POST" action="{{ url_for('main.move_group', group_id=group.id, direction='down') }}">
+              <button type="submit" {% if loop.last %}disabled{% endif %}
+                      class="text-xs w-7 h-7 rounded-lg border border-red-300 text-red-700 hover:bg-red-50 disabled:opacity-30 disabled:cursor-not-allowed transition">
+                ▼
+              </button>
+            </form>
+          </div>
+        </div>
+        <form method="POST" action="{{ url_for('main.edit_group', group_id=group.id) }}" class="space-y-2">
+          <input type="text" name="name" value="{{ group.name }}"
+                 class="border p-2 rounded-lg w-full focus:ring-2 focus:ring-red-500">
+          <button type="submit"
+                  class="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1 rounded-lg shadow transition">
+            Renommer
+          </button>
+        </form>
+        <div class="flex items-center justify-between mt-2">
+          <span class="text-xs text-gray-500">{{ group.members|length }} membre(s)</span>
+          <form method="POST" action="{{ url_for('main.delete_group', group_id=group.id) }}"
+                onsubmit="return confirm('Supprimer ce groupe ? Les membres ne seront pas supprimés.');">
+            <button type="submit"
+                    class="bg-red-800 hover:bg-red-900 text-white text-xs px-3 py-1 rounded-lg shadow transition">
+              Supprimer
+            </button>
+          </form>
+        </div>
+      </div>
+      {% else %}
+      <p class="text-gray-500">Aucun groupe pour l'instant.</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

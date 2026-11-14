@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}Réunion - {{ meeting.title }}{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-4">Réunion : {{ meeting.title }} ({{ meeting.date.strftime("%d/%m/%Y") }})</h1>
+
+<form method="POST">
+  {% for group in grouped_members %}
+  <section class="mb-6 bg-white shadow-md rounded-xl overflow-hidden" data-group="{{ group.id }}">
+    <!-- En-tête du groupe -->
+    <div class="px-4 py-3 bg-gradient-to-r from-red-600 to-red-800 text-white flex flex-wrap justify-between items-center gap-2">
+      <h2 class="font-semibold text-lg">{{ group.name }}</h2>
+      <div class="flex items-center gap-2">
+        <span class="present-count bg-white/20 text-white text-xs font-semibold px-2 py-1 rounded-lg"
+              title="Membres sélectionnés présents / total du groupe">
+          0/{{ group.members|length }}
+        </span>
+        <button type="button"
+                class="mark-all-present bg-white/20 hover:bg-white/30 text-white text-xs px-3 py-1 rounded-lg transition">
+          ✅ Tout le groupe présent
+        </button>
+      </div>
+    </div>
+
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="text-left border-b">
+          <th class="px-4 py-2">Membre</th>
+          <th class="px-4 py-2">Présence</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in group.members %}
+        <tr class="border-t">
+          <td class="px-4 py-2 font-medium">
+            {{ m.display_name }}
+            {% if m.totem %}
+            <span class="block text-xs font-normal text-gray-500">{{ m.first_name }} {{ m.last_name }}</span>
+            {% endif %}
+          </td>
+          <td class="px-4 py-2">
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-2">
+              {% for s in statuses %}
+              <label>
+                <input type="radio" name="member_{{ m.id }}" value="{{ s.key }}"
+                  class="hidden peer"
+                  {% if attendance_map.get(m.id) == s.key %}checked{% endif %}>
+                <div class="w-full h-full flex items-center justify-center text-center leading-tight text-xs sm:text-sm px-2 py-2 rounded-lg border cursor-pointer peer-checked:text-white transition {{ s.btn }}">
+                  {{ s.emoji }} {{ s.label }}
+                </div>
+              </label>
+              {% endfor %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+  {% else %}
+  <p class="text-gray-500 mb-4">Aucun membre enregistré.</p>
+  {% endfor %}
+
+  <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg shadow transition">
+    Enregistrer
+  </button>
+</form>
+
+<a href="{{ url_for('main.admin') }}" class="inline-block mt-4 text-red-700 hover:text-red-900">← Retour administration</a>
+
+<script>
+function updateCount(section) {
+  const presentRadios = section.querySelectorAll('input[type="radio"][value="present"]');
+  const checked = section.querySelectorAll('input[type="radio"][value="present"]:checked');
+  const badge = section.querySelector(".present-count");
+  badge.textContent = checked.length + "/" + presentRadios.length;
+  // Vert quand tout le groupe est présent
+  badge.classList.toggle("bg-green-500", checked.length === presentRadios.length && presentRadios.length > 0);
+  badge.classList.toggle("bg-white/20", !(checked.length === presentRadios.length && presentRadios.length > 0));
+}
+
+document.querySelectorAll("section[data-group]").forEach((section) => {
+  // Compte initial (états déjà enregistrés en DB)
+  updateCount(section);
+
+  // Mise à jour à chaque changement de sélection
+  section.addEventListener("change", (e) => {
+    if (e.target.type === "radio") updateCount(section);
+  });
+
+  const btn = section.querySelector(".mark-all-present");
+  if (btn) {
+    btn.addEventListener("click", () => {
+      section.querySelectorAll('input[type="radio"][value="present"]').forEach((radio) => {
+        radio.checked = true;
+      });
+      updateCount(section);
+    });
+  }
+});
+</script>
+{% endblock %}

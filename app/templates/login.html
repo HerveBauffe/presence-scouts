@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Connexion{% endblock %}
+{% block content %}
+<div class="max-w-md mx-auto bg-white shadow p-6 rounded">
+    <h1 class="text-xl font-bold mb-4">Connexion administrateur</h1>
+    <form method="POST">
+        {{ form.hidden_tag() }}
+        <div class="mb-4">
+            {{ form.username.label(class="block text-sm") }}
+            {{ form.username(class="w-full border rounded px-3 py-2") }}
+        </div>
+        <div class="mb-4">
+            {{ form.password.label(class="block text-sm") }}
+            {{ form.password(class="w-full border rounded px-3 py-2") }}
+        </div>
+        <div>
+            {{ form.submit(class_="bg-red-700 text-white px-4 py-2 rounded w-full hover:bg-red-800") }}
+        </div>
+    </form>
+</div>
+{% endblock %}
