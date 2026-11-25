@@ -78,6 +78,28 @@ function updateCount(section) {
   badge.classList.toggle("bg-white/20", !(checked.length === presentRadios.length && presentRadios.length > 0));
 }
 
+// Recliquer sur le statut déjà sélectionné le désélectionne : le membre
+// redevient "non défini" (aucune valeur envoyée à l'enregistrement).
+function markSelected(radio) {
+  document.querySelectorAll(`input[type="radio"][name="${radio.name}"]`).forEach((r) => {
+    r.dataset.wasChecked = r === radio ? "1" : "0";
+  });
+}
+
+document.querySelectorAll('input[type="radio"][name^="member_"]').forEach((radio) => {
+  radio.dataset.wasChecked = radio.checked ? "1" : "0";
+  radio.addEventListener("click", () => {
+    if (radio.dataset.wasChecked === "1") {
+      radio.checked = false;
+      radio.dataset.wasChecked = "0";
+      // "change" ne se déclenche pas lors d'un décochage : on met à jour le compteur
+      updateCount(radio.closest("section[data-group]"));
+    } else {
+      markSelected(radio);
+    }
+  });
+});
+
 document.querySelectorAll("section[data-group]").forEach((section) => {
   // Compte initial (états déjà enregistrés en DB)
   updateCount(section);
@@ -92,6 +114,7 @@ document.querySelectorAll("section[data-group]").forEach((section) => {
     btn.addEventListener("click", () => {
       section.querySelectorAll('input[type="radio"][value="present"]').forEach((radio) => {
         radio.checked = true;
+        markSelected(radio);
       });
       updateCount(section);
     });

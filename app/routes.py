@@ -7,7 +7,7 @@ from werkzeug.utils import secure_filename
 from . import db
 from .models import (
     Member, User, Meeting, Attendance, Group,
-    STATUSES, STATUS_KEYS, ABSENT_KEYS, DEFAULT_ABSENCE, normalize_status,
+    STATUSES, STATUS_KEYS, ABSENT_KEYS, normalize_status,
 )
 from .forms import AddMemberForm, AddMeetingForm, AddGroupForm, LoginForm
 
@@ -272,15 +272,18 @@ def meeting_detail(meeting_id):
         for m in members:
             status_value = request.form.get(f"member_{m.id}")
             attendance = Attendance.query.filter_by(meeting_id=meeting.id, member_id=m.id).first()
+
+            # Aucun statut choisi : le membre reste "non défini" (pas de ligne en DB)
+            if status_value not in STATUS_KEYS:
+                if attendance:
+                    db.session.delete(attendance)
+                continue
+
+            # 4 états possibles (voir STATUSES dans models.py)
             if not attendance:
                 attendance = Attendance(meeting_id=meeting.id, member_id=m.id)
                 db.session.add(attendance)
-
-            # 4 états possibles (voir STATUSES dans models.py)
-            if status_value in STATUS_KEYS:
-                attendance.status = status_value
-            else:
-                attendance.status = DEFAULT_ABSENCE  # aucun choix : absence par défaut
+            attendance.status = status_value
 
         db.session.commit()
         flash("Présences mises à jour", "success")

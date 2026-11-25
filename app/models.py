@@ -30,8 +30,6 @@ STATUSES = [
 ]
 STATUS_KEYS = [s["key"] for s in STATUSES]
 ABSENT_KEYS = {"excused", "unexcused", "unwarned"}
-# Statut enregistré pour un membre laissé sans sélection à la sauvegarde
-DEFAULT_ABSENCE = "unexcused"
 
 def normalize_status(value):
     """Renvoie une clé de STATUSES valide, ou None si la valeur est inconnue."""
@@ -91,7 +89,8 @@ class Attendance(db.Model):
     meeting_id = db.Column(db.Integer, db.ForeignKey("meeting.id"), nullable=False)
     member_id = db.Column(db.Integer, db.ForeignKey("member.id"), nullable=False)
     # clés de STATUSES : present / excused / unexcused / unwarned (ancien "absent" toléré)
-    status = db.Column(db.String(20), default=DEFAULT_ABSENCE)
+    # pas de ligne = statut non défini (jamais saisi)
+    status = db.Column(db.String(20), nullable=True)
 
     def __repr__(self):
         return f"<Attendance Member {self.member_id} for Meeting {self.meeting_id}: {self.status}>"
